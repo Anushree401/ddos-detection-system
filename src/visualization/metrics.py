@@ -33,4 +33,4 @@ def plot_all_diagnostics(decisions):
     plot_probability_calibration(decisions, ax=axes[2])
     
     plt.tight_layout()
-    plt.show()
+    plt.savefig("diagnostics.png")

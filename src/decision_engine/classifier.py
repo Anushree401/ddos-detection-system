@@ -2,7 +2,10 @@ import os
 import pandas as pd
 from src.decision_engine.scorer import heuristic_score
 
-def run_decision_engine(feature_dir, thresholds):
+def compute_scores(feature_dir, thresholds):
+    """
+    Apply heuristic_score to all windows and return a DataFrame.
+    """
     all_decisions = []
 
     for fname in sorted(os.listdir(feature_dir)):
@@ -23,6 +26,7 @@ def run_decision_engine(feature_dir, thresholds):
                 "file_id":              row["file_id"],
                 "filename":             row["filename"],
                 "dataset":              row["dataset"],
+                "attack_type":          row["attack_type"],
                 "ground_truth":         row["attack_type"],
                 "window_start":         row["window_start"],
                 "packet_rate":          row["packet_rate"],
@@ -34,25 +38,39 @@ def run_decision_engine(feature_dir, thresholds):
                 "heuristic_score":      result["heuristic_score"],
                 "normalized_score":     result["normalized_score"],
                 "attack_probability":   result["attack_probability"],
-                "classification":       result["classification"],
                 "attack_type_detected": result["attack_type_detected"],
                 "rules_triggered":      ", ".join(triggered_rules) if triggered_rules else "NONE",
                 "decision_trace":       result["decision_trace"],
             })
 
-    decisions = pd.DataFrame(all_decisions)
+    scores_df = pd.DataFrame(all_decisions)
+    return scores_df
 
-    print(f"Total windows evaluated : {len(decisions)}")
+def classify(scores_df, band_suspicious, band_attack):
+    """
+    Apply final classification based on dynamic thresholds.
+    """
+    def _classify(score):
+        if score >= band_attack:
+            return "ATTACK"
+        elif score >= band_suspicious:
+            return "SUSPICIOUS"
+        else:
+            return "NORMAL"
+            
+    scores_df["classification"] = scores_df["heuristic_score"].apply(_classify)
+    
+    print(f"\nTotal windows evaluated : {len(scores_df)}")
     print()
     print("Classification breakdown:")
-    print(decisions["classification"].value_counts())
+    print(scores_df["classification"].value_counts())
     print()
     print("Attack type breakdown:")
-    print(decisions["attack_type_detected"].value_counts())
+    print(scores_df["attack_type_detected"].value_counts())
     print()
 
     print(
-        decisions.drop(columns=["decision_trace"]).head(20)
+        scores_df.drop(columns=["decision_trace"]).head(20)
     )
 
-    return decisions
+    return scores_df

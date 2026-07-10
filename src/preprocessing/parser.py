@@ -1,15 +1,20 @@
 import os
 import subprocess
-from IPython.display import clear_output
 import pandas as pd
+# pyrefly: ignore [missing-import]
+from scapy.all import PcapReader, IP, IPv6, TCP, UDP, ICMP
 
-def parse_pcaps(dataset_root, dataset_index, validation_report):
-    parsed_dir = os.path.join(dataset_root, "parsed")
+def parse_pcaps(dataset_root, dataset_index, validation_report, parsed_dir=None):
+    if parsed_dir is None:
+        parsed_dir = os.path.join(dataset_root, "../parsed")
     os.makedirs(parsed_dir, exist_ok=True)
     valid_files = validation_report[
         validation_report["validation"] == "PASS"
     ]
     for _, row in valid_files.iterrows():
+        csv_path = os.path.join(parsed_dir, f"{row['file_id']}.csv")
+        if os.path.exists(csv_path):
+            continue
         metadata = dataset_index[
             dataset_index["file_id"] == row["file_id"]
         ].iloc[0]

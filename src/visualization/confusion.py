@@ -9,10 +9,10 @@ def plot_confusion_matrix(decisions, ax=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 5))
         
-    y_true = np.where(decisions["gt_is_attack"], "Attack (Ground Truth)", "Normal (Ground Truth)")
-    y_pred = np.where(decisions["pred_is_attack"], "Flagged as Attack", "Flagged as Normal")
+    y_true = decisions["gt_is_attack"].astype(bool)
+    y_pred = decisions["pred_is_attack"].astype(bool)
 
-    cm = confusion_matrix(y_true, y_pred, labels=["Attack (Ground Truth)", "Normal (Ground Truth)"])
+    cm = confusion_matrix(y_true, y_pred, labels=[True, False])
 
     sns.heatmap(
         cm, annot=True, fmt="d", cmap="Blues", ax=ax,

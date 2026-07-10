@@ -13,6 +13,8 @@ def identify_dataset(path):
       return "BOT_IOT"
   elif "cic_ddos2019" in path:
       return "CIC_DDOS2019"
+  elif "synthetic" in path:
+      return "SYNTHETIC"
   return "UNKNOWN"
 
 def scan_datasets(dataset_root):

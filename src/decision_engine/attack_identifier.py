@@ -13,6 +13,7 @@ def identify_attack(dataset, path):
   mapping = {
     "M57_PATENTS": "NORMAL",
     "MALWARE_TRAFFIC_ANALYSIS": "MALWARE",
-    "BOT_IOT": "UNKNOWN"
+    "BOT_IOT": "UNKNOWN",
+    "SYNTHETIC": "SYN_FLOOD" if "syn" in path else "DDOS"
   }
   return mapping.get(dataset,"UNKNOWN")

@@ -10,6 +10,9 @@ def generate_features(parsed_dir, output_dir, dataset_index):
         [f for f in os.listdir(parsed_dir) if f.endswith(".csv")]
     )
     for file in parsed_files:
+        output_file = os.path.join(output_dir, file)
+        if os.path.exists(output_file):
+            continue
         df = pd.read_csv(os.path.join(parsed_dir, file))
         if df.empty:
             continue

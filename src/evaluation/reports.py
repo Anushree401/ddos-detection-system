@@ -4,7 +4,10 @@ from IPython.display import display
 
 def evaluate_engine(decisions):
     decisions = decisions.copy()
-    decisions["gt_is_attack"]   = decisions["ground_truth"] != "NORMAL"
+    # The detector is designed for volumetric floods. 
+    # Malware, WebDDoS, and low-rate attacks are out-of-scope (treated as negatives).
+    volumetric_labels = ["SYN_FLOOD", "UDP_FLOOD", "ICMP_FLOOD", "DrDoS"]
+    decisions["gt_is_attack"]   = decisions["ground_truth"].isin(volumetric_labels)
     decisions["pred_is_attack"] = decisions["classification"].isin(["ATTACK", "SUSPICIOUS"])
 
     tp = int(( decisions["gt_is_attack"] &  decisions["pred_is_attack"]).sum())

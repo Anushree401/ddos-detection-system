@@ -1,9 +1,7 @@
 import math
 from configs.weights import WEIGHTS
-from configs.thresholds import MAX_SCORE, BAND_SUSPICIOUS, BAND_ATTACK, SIGMOID_K, SIGMOID_CENTRE
+from configs.thresholds import MAX_SCORE, SIGMOID_K, SIGMOID_CENTRE
 
-
-import math
 
 # Weights must sum to 100 so score reads naturally as a /100 value
 WEIGHTS = {
@@ -17,8 +15,6 @@ WEIGHTS = {
 assert sum(WEIGHTS.values()) == 100, "Weights must sum to 100"
 
 MAX_SCORE       = 100   # clean reference for normalisation
-BAND_SUSPICIOUS = 40    # from key_focus_area.md §4.1
-BAND_ATTACK     = 70
 
 # Sigmoid tuned on normalised [0,1] input:
 #   p(0.40) ≈ 0.45  (suspicious boundary)  ← score of 40
@@ -37,99 +33,102 @@ def heuristic_score(row, thresholds, weights=WEIGHTS):
     """
     dict:
         decision_trace      : per-rule breakdown (value, threshold, weight,
-                              triggered, contribution)
-        heuristic_score     : int 0-100
-        normalized_score    : float 0.0-1.0  (score / MAX_SCORE)
+                              triggered, severity, contribution)
+        heuristic_score     : float 0-200 (approx)
+        normalized_score    : float 0.0-2.0  (score / MAX_SCORE)
         attack_probability  : float 0.0-1.0  (sigmoid of normalized_score)
-        classification      : NORMAL / SUSPICIOUS / ATTACK  <- from score only
         attack_type_detected: finer attack label
     """
 
     decision_trace = {}
-    score = 0
+    score = 0.0
 
     # Rule 1 – Volumetric Load Spike  (upper trigger)
     v = row["packet_rate"]
     t = thresholds["packet_rate"]
     w = weights["packet_rate"]
     fired = bool(v > t)
+    severity = min(v / t, 2.0) if fired and t > 0 else (2.0 if fired else 0.0)
+    contribution = w * severity
     decision_trace["packet_rate"] = {
         "value": round(float(v), 4), "threshold": t,
-        "weight": w, "triggered": fired,
-        "contribution": w if fired else 0,
+        "weight": w, "triggered": fired, "severity": round(severity, 4),
+        "contribution": round(contribution, 4)
     }
-    if fired: score += w
+    score += contribution
 
     # Rule 2 – Handshake Asymmetry / SYN Flood  (upper trigger)
     v = row["syn_ack_ratio"]
     t = thresholds["syn_ack_ratio"]
     w = weights["syn_ack_ratio"]
     fired = bool(v > t)
+    severity = min(v / t, 2.0) if fired and t > 0 else (2.0 if fired else 0.0)
+    contribution = w * severity
     decision_trace["syn_ack_ratio"] = {
         "value": round(float(v), 4), "threshold": t,
-        "weight": w, "triggered": fired,
-        "contribution": w if fired else 0,
+        "weight": w, "triggered": fired, "severity": round(severity, 4),
+        "contribution": round(contribution, 4)
     }
-    if fired: score += w
+    score += contribution
 
     # Rule 3 – Volumetric UDP Influx  (upper trigger)
     v = row["udp_rate"]
     t = thresholds["udp_rate"]
     w = weights["udp_rate"]
     fired = bool(v > t)
+    severity = min(v / t, 2.0) if fired and t > 0 else (2.0 if fired else 0.0)
+    contribution = w * severity
     decision_trace["udp_rate"] = {
         "value": round(float(v), 4), "threshold": t,
-        "weight": w, "triggered": fired,
-        "contribution": w if fired else 0,
+        "weight": w, "triggered": fired, "severity": round(severity, 4),
+        "contribution": round(contribution, 4)
     }
-    if fired: score += w
+    score += contribution
 
     # Rule 4 – Payload Structural Rigidity  (lower trigger: low variance = automated flood)
     v = row["packet_size_variance"]
     t = thresholds["packet_size_variance"]
     w = weights["packet_size_variance"]
     fired = bool(v < t)
+    severity = min(1.0 + (t - v) / t, 2.0) if fired and t > 0 else 0.0
+    contribution = w * severity
     decision_trace["packet_size_variance"] = {
         "value": round(float(v), 4), "threshold": t,
-        "weight": w, "triggered": fired,
-        "contribution": w if fired else 0,
+        "weight": w, "triggered": fired, "severity": round(severity, 4),
+        "contribution": round(contribution, 4)
     }
-    if fired: score += w
+    score += contribution
 
     # Rule 5 – Source Address Dispersion  (upper trigger)
     v = row["unique_src_ips"]
     t = thresholds["unique_src_ips"]
     w = weights["unique_src_ips"]
     fired = bool(v > t)
+    severity = min(v / t, 2.0) if fired and t > 0 else (2.0 if fired else 0.0)
+    contribution = w * severity
     decision_trace["unique_src_ips"] = {
         "value": round(float(v), 4), "threshold": t,
-        "weight": w, "triggered": fired,
-        "contribution": w if fired else 0,
+        "weight": w, "triggered": fired, "severity": round(severity, 4),
+        "contribution": round(contribution, 4)
     }
-    if fired: score += w
+    score += contribution
 
     # Rule 6 – Target Port Concentration  (lower trigger: low entropy = focused targeting)
     v = row["dst_ip_entropy"]
     t = thresholds["dst_ip_entropy"]
     w = weights["dst_ip_entropy"]
     fired = bool(v < t)
+    severity = min(1.0 + (t - v) / t, 2.0) if fired and t > 0 else 0.0
+    contribution = w * severity
     decision_trace["dst_ip_entropy"] = {
         "value": round(float(v), 4), "threshold": t,
-        "weight": w, "triggered": fired,
-        "contribution": w if fired else 0,
+        "weight": w, "triggered": fired, "severity": round(severity, 4),
+        "contribution": round(contribution, 4)
     }
-    if fired: score += w
-
-    # ── Classification: score → label  (probability plays NO role here) ──────
-    if score >= BAND_ATTACK:
-        classification = "ATTACK"
-    elif score >= BAND_SUSPICIOUS:
-        classification = "SUSPICIOUS"
-    else:
-        classification = "NORMAL"
+    score += contribution
 
     # ── Probability: normalize first, then sigmoid  (independent path) ────────
-    #   Step 1: normalize score to [0, 1]
+    #   Step 1: normalize score to [0, max(MAX_SCORE, actual)]
     normalized_score = score / MAX_SCORE
     #   Step 2: sigmoid — steepness k=12, centre=0.55
     attack_probability = round(
@@ -141,10 +140,9 @@ def heuristic_score(row, thresholds, weights=WEIGHTS):
 
     return {
         "decision_trace":       decision_trace,
-        "heuristic_score":      score,
+        "heuristic_score":      round(score, 4),
         "normalized_score":     round(normalized_score, 4),
         "attack_probability":   attack_probability,
-        "classification":       classification,
         "attack_type_detected": attack_type_detected,
     }
 
