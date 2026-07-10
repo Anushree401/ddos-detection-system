@@ -1,7 +1,7 @@
 import math
 from configs.weights import WEIGHTS
 from configs.thresholds import MAX_SCORE, BAND_SUSPICIOUS, BAND_ATTACK, SIGMOID_K, SIGMOID_CENTRE
-from src.decision_engine.attack_identifier import _identify_attack_type
+
 
 import math
 
@@ -33,7 +33,7 @@ def _sigmoid(x):
     return 1.0 / (1.0 + math.exp(-x))
 
 
-def heuristic_score(row, thresholds=THRESHOLDS, weights=WEIGHTS):
+def heuristic_score(row, thresholds, weights=WEIGHTS):
     """
     dict:
         decision_trace      : per-rule breakdown (value, threshold, weight,

@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+# pyrefly: ignore [missing-import]
 from IPython.display import display
 from configs.thresholds import NORMAL_LABELS
 
@@ -58,15 +59,8 @@ def compute_thresholds(feature_dir, normal_labels=NORMAL_LABELS):
     print("=" * 70)
     print("DATA-DRIVEN THRESHOLD JUSTIFICATION TABLE")
     print("=" * 70)
-    display(stats_df)
+    print(stats_df)
     print(f"\nTotal NORMAL windows used for calibration : {len(normal)}")
     print(f"Total windows in dataset                  : {len(all_features)}")
 
     return thresholds, all_features
-
-
-THRESHOLDS, all_features = compute_thresholds(feature_dir)
-
-print("\nComputed thresholds:")
-for k, v in THRESHOLDS.items():
-    print(f"  {k:<25} = {v}")

@@ -150,12 +150,12 @@ def feature_profile(feature_dir):
     print("="*70)
     print("OVERALL FEATURE PROFILE")
     print("="*70)
-    display(features[numeric_columns].describe())
+    print(features[numeric_columns].describe())
     print("\n")
     print("="*70)
     print("PROFILE BY ATTACK TYPE")
     print("="*70)
-    display(
+    print(
         features.groupby("attack_type")[numeric_columns]
         .mean()
         .round(2)
@@ -164,7 +164,7 @@ def feature_profile(feature_dir):
     print("="*70)
     print("PROFILE BY DATASET")
     print("="*70)
-    display(
+    print(
         features.groupby("dataset")[numeric_columns]
         .mean()
         .round(2)

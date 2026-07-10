@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from src.decision_engine.scorer import heuristic_score
 
-def run_decision_engine(feature_dir, thresholds=THRESHOLDS):
+def run_decision_engine(feature_dir, thresholds):
     all_decisions = []
 
     for fname in sorted(os.listdir(feature_dir)):
@@ -51,11 +51,8 @@ def run_decision_engine(feature_dir, thresholds=THRESHOLDS):
     print(decisions["attack_type_detected"].value_counts())
     print()
 
-    display(
+    print(
         decisions.drop(columns=["decision_trace"]).head(20)
     )
 
     return decisions
-
-
-decisions = run_decision_engine(feature_dir)

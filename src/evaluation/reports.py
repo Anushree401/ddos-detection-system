@@ -1,4 +1,5 @@
 import pandas as pd
+# pyrefly: ignore [missing-import]
 from IPython.display import display
 
 def evaluate_engine(decisions):
@@ -31,13 +32,10 @@ def evaluate_engine(decisions):
     print(f"  F1 Score   : {f1:.3f}")
     print()
     print("Probability & score distribution by classification:")
-    display(
+    print(
         decisions.groupby("classification")[
             ["heuristic_score", "normalized_score", "attack_probability"]
         ].describe().round(3)
     )
 
     return decisions
-
-
-decisions = evaluate_engine(decisions)
