@@ -1,5 +1,8 @@
 import os
 import pandas as pd
+# pyrefly: ignore [missing-import]
+import numpy as np
+# pyrefly: ignore [missing-import]
 from IPython.display import display
 
 def test_feature_pipeline(feature_dir):
