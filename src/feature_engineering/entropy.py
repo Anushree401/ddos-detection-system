@@ -1,5 +1,7 @@
 import math
 from collections import Counter
+# pyrefly: ignore [missing-import]
+import numpy as np
 
 def entropy(series):
     if len(series) == 0:
