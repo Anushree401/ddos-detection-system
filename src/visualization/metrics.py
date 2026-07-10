@@ -34,3 +34,4 @@ def plot_all_diagnostics(decisions):
     
     plt.tight_layout()
     plt.savefig("diagnostics.png")
+    plt.show()
